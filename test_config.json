@@ -1,0 +1,27 @@
+{
+  "name": "testlib",
+  "version": "1.0.0",
+  "language": "c",
+  "description": "Test library",
+  "author": "Test Author",
+  "modules": [
+    {
+      "name": "core",
+      "description": "Core module",
+      "functions": [
+        {
+          "name": "test_func",
+          "return_type": "int",
+          "description": "Test function",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "int",
+              "description": "Input value"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

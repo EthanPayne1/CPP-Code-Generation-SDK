@@ -1,0 +1,257 @@
+cmake_minimum_required(VERSION 3.16)
+
+# Project configuration
+project({{ config.name }}
+    VERSION {{ config.version }}
+    DESCRIPTION "{{ config.description or 'Generated C/C++ library' }}"
+    LANGUAGES {% if config.language.lower() == 'c' %}C{% else %}CXX{% endif %}
+)
+
+# Set default build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Compiler and language standards
+{% if config.language.lower() == 'c' %}
+set(CMAKE_C_STANDARD {{ config.c_standard[1:] if config.c_standard else '99' }})
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+{% else %}
+set(CMAKE_CXX_STANDARD {{ config.cpp_standard[3:] if config.cpp_standard else '17' }})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+{% endif %}
+
+# Compiler-specific options
+if(CMAKE_{% if config.language.lower() == 'c' %}C{% else %}CXX{% endif %}_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wconversion
+        -Wsign-conversion
+        -Wcast-qual
+        -Wformat=2
+        -Wundef
+        -Wshadow
+        -Wcast-align
+        -Wunused
+        -Wnull-dereference
+        -Wdouble-promotion
+        -Wimplicit-fallthrough
+        {% if config.language.lower() == 'cpp' %}
+        -Wnon-virtual-dtor
+        -Wold-style-cast
+        -Woverloaded-virtual
+        -Wsuggest-override
+        {% endif %}
+    )
+    
+    # Additional flags for different build types
+    set(CMAKE_{% if config.language.lower() == 'c' %}C{% else %}CXX{% endif %}_FLAGS_DEBUG "-g -O0 -DDEBUG -fsanitize=address,undefined")
+    set(CMAKE_{% if config.language.lower() == 'c' %}C{% else %}CXX{% endif %}_FLAGS_RELEASE "-O3 -DNDEBUG")
+    set(CMAKE_{% if config.language.lower() == 'c' %}C{% else %}CXX{% endif %}_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG")
+elseif(CMAKE_{% if config.language.lower() == 'c' %}C{% else %}CXX{% endif %}_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/W4 /permissive-)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(/Od /Zi)
+        add_compile_definitions(DEBUG)
+    else()
+        add_compile_options(/O2)
+        add_compile_definitions(NDEBUG)
+    endif()
+endif()
+
+# Platform-specific definitions
+if(WIN32)
+    add_compile_definitions(
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX
+        _CRT_SECURE_NO_WARNINGS
+    )
+endif()
+
+# Library configuration
+set({{ config.name | upper }}_VERSION_MAJOR {{ config.version.split('.')[0] }})
+set({{ config.name | upper }}_VERSION_MINOR {{ config.version.split('.')[1] }})
+set({{ config.name | upper }}_VERSION_PATCH {{ config.version.split('.')[2] }})
+
+# Source files
+set({{ config.name | upper }}_SOURCES
+{% for module in config.modules %}
+    src/{{ module.name }}.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}
+{% endfor %}
+)
+
+# Header files
+set({{ config.name | upper }}_HEADERS
+{% for module in config.modules %}
+    include/{{ config.name }}/{{ module.name }}.h
+{% endfor %}
+)
+
+# Create library
+{% set lib_sources = config.name | upper + "_SOURCES" %}
+{% set lib_headers = config.name | upper + "_HEADERS" %}
+add_library({{ config.name }} ${{ "{" + lib_sources + "}" }} ${{ "{" + lib_headers + "}" }})
+
+# Library properties
+{% set lib_headers = config.name | upper + "_HEADERS" %}
+set_target_properties({{ config.name }} PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION {{ config.version.split('.')[0] }}
+    PUBLIC_HEADER "${{ "{" + lib_headers + "}" }}"
+)
+
+# Include directories
+target_include_directories({{ config.name }}
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# Dependencies
+{% if config.dependencies %}
+# Find required packages
+{% for dep in config.dependencies %}
+{% if dep.type == 'cmake' %}
+find_package({{ dep.name }} {% if dep.version %}{{ dep.version }} {% endif %}{% if dep.required %}REQUIRED{% endif %})
+target_link_libraries({{ config.name }} {% if dep.required %}PUBLIC{% else %}PRIVATE{% endif %} {{ dep.name }})
+{% elif dep.type == 'pkg-config' %}
+find_package(PkgConfig REQUIRED)
+pkg_check_modules({{ dep.name | upper }} {% if dep.required %}REQUIRED{% endif %} {{ dep.name }}{% if dep.version %}>={{ dep.version }}{% endif %})
+{% set dep_inc = dep.name | upper + "_INCLUDE_DIRS" %}
+{% set dep_lib = dep.name | upper + "_LIBRARIES" %}
+{% set dep_flags = dep.name | upper + "_CFLAGS_OTHER" %}
+target_include_directories({{ config.name }} PRIVATE ${{ "{" + dep_inc + "}" }})
+target_link_libraries({{ config.name }} PRIVATE ${{ "{" + dep_lib + "}" }})
+target_compile_options({{ config.name }} PRIVATE ${{ "{" + dep_flags + "}" }})
+{% endif %}
+{% endfor %}
+{% endif %}
+
+# Compiler definitions
+target_compile_definitions({{ config.name }}
+    PRIVATE
+        {{ config.name | upper }}_VERSION_MAJOR={{ config.version.split('.')[0] }}
+        {{ config.name | upper }}_VERSION_MINOR={{ config.version.split('.')[1] }}
+        {{ config.name | upper }}_VERSION_PATCH={{ config.version.split('.')[2] }}
+        {{ config.name | upper }}_VERSION_STRING="${PROJECT_VERSION}"
+)
+
+# Testing
+{% if config.generate_tests %}
+option({{ config.name | upper }}_BUILD_TESTS "Build tests" OFF)
+
+if({{ config.name | upper }}_BUILD_TESTS)
+    enable_testing()
+    
+    # Find test framework
+    {% if config.test_framework == 'gtest' %}
+    find_package(GTest REQUIRED)
+    {% elif config.test_framework == 'catch2' %}
+    find_package(Catch2 3 REQUIRED)
+    {% elif config.test_framework == 'unity' %}
+    # Unity is typically included as source
+    add_subdirectory(extern/unity EXCLUDE_FROM_ALL)
+    {% endif %}
+    
+    # Test executable
+    file(GLOB_RECURSE TEST_SOURCES tests/*.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %})
+    add_executable({{ config.name }}_tests ${TEST_SOURCES})
+    
+    target_link_libraries({{ config.name }}_tests
+        PRIVATE
+            {{ config.name }}
+            {% if config.test_framework == 'gtest' %}
+            GTest::gtest_main
+            {% elif config.test_framework == 'catch2' %}
+            Catch2::Catch2WithMain
+            {% elif config.test_framework == 'unity' %}
+            unity
+            {% endif %}
+    )
+    
+    target_include_directories({{ config.name }}_tests
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    
+    # Add tests to CTest
+    {% if config.test_framework == 'gtest' %}
+    include(GoogleTest)
+    gtest_discover_tests({{ config.name }}_tests)
+    {% elif config.test_framework == 'catch2' %}
+    include(CTest)
+    include(Catch)
+    catch_discover_tests({{ config.name }}_tests)
+    {% else %}
+    add_test(NAME {{ config.name }}_tests COMMAND {{ config.name }}_tests)
+    {% endif %}
+endif()
+{% endif %}
+
+# Installation
+include(GNUInstallDirs)
+
+install(TARGETS {{ config.name }}
+    EXPORT {{ config.name }}Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/{{ config.name }}
+)
+
+# Install export targets
+install(EXPORT {{ config.name }}Targets
+    FILE {{ config.name }}Targets.cmake
+    NAMESPACE {{ config.name }}::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/{{ config.name }}
+)
+
+# Create config file
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/{{ config.name }}Config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/{{ config.name }}Config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/{{ config.name }}
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/{{ config.name }}ConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/{{ config.name }}Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/{{ config.name }}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/{{ config.name }}
+)
+
+# Package configuration
+set(CPACK_PACKAGE_NAME "{{ config.name }}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "{{ config.description or 'Generated C/C++ library' }}")
+set(CPACK_PACKAGE_VENDOR "{{ config.author or 'Unknown' }}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
+include(CPack)
+
+# Show configuration summary
+message(STATUS "")
+message(STATUS "{{ config.name }} Configuration Summary:")
+message(STATUS "  Version: ${PROJECT_VERSION}")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  {% if config.language.lower() == 'c' %}C{% else %}C++{% endif %} standard: {% if config.language.lower() == 'c' %}${CMAKE_C_STANDARD}{% else %}${CMAKE_CXX_STANDARD}{% endif %}")
+message(STATUS "  Install prefix: ${CMAKE_INSTALL_PREFIX}")
+{% if config.generate_tests %}
+message(STATUS "  Build tests: ${{ "{" + config.name | upper + "_BUILD_TESTS}" }}")
+{% endif %}
+message(STATUS "")

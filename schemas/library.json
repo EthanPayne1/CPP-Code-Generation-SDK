@@ -1,0 +1,437 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "C/C++ Library Configuration",
+  "description": "Schema for configuring C/C++ library generation",
+  "type": "object",
+  "required": ["name", "language", "version", "modules"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "description": "Library name (must be a valid C identifier)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (e.g., 1.0.0)"
+    },
+    "language": {
+      "type": "string",
+      "enum": ["c", "cpp", "c++"],
+      "description": "Programming language"
+    },
+    "description": {
+      "type": "string",
+      "description": "Library description"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name"
+    },
+    "license": {
+      "type": "string",
+      "enum": ["MIT", "GPL-3.0", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "Custom"],
+      "default": "MIT",
+      "description": "License type"
+    },
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "description": "C++ namespace (only for C++)"
+    },
+    "c_standard": {
+      "type": "string",
+      "enum": ["c89", "c99", "c11", "c17", "c2x"],
+      "default": "c99",
+      "description": "C language standard"
+    },
+    "cpp_standard": {
+      "type": "string",
+      "enum": ["cpp98", "cpp03", "cpp11", "cpp14", "cpp17", "cpp20", "cpp23"],
+      "default": "cpp17",
+      "description": "C++ language standard"
+    },
+    "build_systems": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cmake", "make", "meson", "autotools"]
+      },
+      "default": ["cmake"],
+      "description": "Build systems to generate"
+    },
+    "generate_tests": {
+      "type": "boolean",
+      "default": true,
+      "description": "Generate test files"
+    },
+    "test_framework": {
+      "type": "string",
+      "enum": ["unity", "cmocka", "gtest", "catch2", "doctest"],
+      "default": "unity",
+      "description": "Testing framework"
+    },
+    "generate_docs": {
+      "type": "boolean",
+      "default": true,
+      "description": "Generate documentation"
+    },
+    "include_examples": {
+      "type": "boolean",
+      "default": true,
+      "description": "Include example usage"
+    },
+    "error_handling": {
+      "type": "object",
+      "properties": {
+        "style": {
+          "type": "string",
+          "enum": ["return_codes", "exceptions", "errno", "custom"],
+          "default": "return_codes",
+          "description": "Error handling style"
+        },
+        "use_assert": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use assertions for debugging"
+        }
+      },
+      "additionalProperties": false
+    },
+    "memory_management": {
+      "type": "object",
+      "properties": {
+        "style": {
+          "type": "string",
+          "enum": ["manual", "pool", "gc", "smart_pointers"],
+          "default": "manual",
+          "description": "Memory management style"
+        },
+        "include_allocator": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include custom allocator"
+        }
+      },
+      "additionalProperties": false
+    },
+    "portability": {
+      "type": "object",
+      "properties": {
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["linux", "windows", "macos", "embedded", "all"]
+          },
+          "default": ["all"],
+          "description": "Target platforms"
+        },
+        "endianness": {
+          "type": "string",
+          "enum": ["little", "big", "both"],
+          "default": "both",
+          "description": "Endianness support"
+        }
+      },
+      "additionalProperties": false
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/module"
+      },
+      "description": "Library modules"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/dependency"
+      },
+      "description": "External dependencies"
+    }
+  },
+  "definitions": {
+    "module": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Module name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Module description"
+        },
+        "functions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/function"
+          },
+          "description": "Module functions"
+        },
+        "structures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/structure"
+          },
+          "description": "Module structures"
+        },
+        "enums": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/enum"
+          },
+          "description": "Module enumerations"
+        },
+        "constants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/constant"
+          },
+          "description": "Module constants"
+        }
+      },
+      "additionalProperties": false
+    },
+    "function": {
+      "type": "object",
+      "required": ["name", "return_type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Function name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Function description"
+        },
+        "return_type": {
+          "type": "string",
+          "description": "Return type"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parameter"
+          },
+          "description": "Function parameters"
+        },
+        "is_inline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Inline function"
+        },
+        "is_static": {
+          "type": "boolean",
+          "default": false,
+          "description": "Static function"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private", "protected"],
+          "default": "public",
+          "description": "Function visibility"
+        }
+      },
+      "additionalProperties": false
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Parameter name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Parameter type"
+        },
+        "description": {
+          "type": "string",
+          "description": "Parameter description"
+        },
+        "default_value": {
+          "type": "string",
+          "description": "Default value (C++ only)"
+        },
+        "is_const": {
+          "type": "boolean",
+          "default": false,
+          "description": "Const parameter"
+        },
+        "is_pointer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pointer parameter"
+        },
+        "is_array": {
+          "type": "boolean",
+          "default": false,
+          "description": "Array parameter"
+        }
+      },
+      "additionalProperties": false
+    },
+    "structure": {
+      "type": "object",
+      "required": ["name", "fields"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Structure name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Structure description"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/field"
+          },
+          "description": "Structure fields"
+        },
+        "is_packed": {
+          "type": "boolean",
+          "default": false,
+          "description": "Packed structure"
+        }
+      },
+      "additionalProperties": false
+    },
+    "field": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Field name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Field type"
+        },
+        "description": {
+          "type": "string",
+          "description": "Field description"
+        },
+        "array_size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Array size (if array)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "enum": {
+      "type": "object",
+      "required": ["name", "values"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Enum name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Enum description"
+        },
+        "type": {
+          "type": "string",
+          "default": "int",
+          "description": "Underlying type"
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/enum_value"
+          },
+          "description": "Enum values"
+        }
+      },
+      "additionalProperties": false
+    },
+    "enum_value": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "description": "Enum value name"
+        },
+        "value": {
+          "type": "integer",
+          "description": "Explicit value"
+        },
+        "description": {
+          "type": "string",
+          "description": "Enum value description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "constant": {
+      "type": "object",
+      "required": ["name", "type", "value"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "Constant name (uppercase)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Constant type"
+        },
+        "value": {
+          "type": "string",
+          "description": "Constant value"
+        },
+        "description": {
+          "type": "string",
+          "description": "Constant description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependency": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Dependency name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version requirement"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["system", "pkg-config", "cmake", "vcpkg", "conan"],
+          "default": "system",
+          "description": "Dependency type"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true,
+          "description": "Required dependency"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

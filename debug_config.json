@@ -1,0 +1,37 @@
+{
+  "name": "debuglib",
+  "version": "1.0.0",
+  "language": "c",
+  "description": "Debug library",
+  "author": "Test",
+  "modules": [
+    {
+      "name": "debug",
+      "description": "Debug module",
+      "constants": [
+        {
+          "name": "DEBUG_MAX",
+          "type": "int",
+          "value": "100",
+          "description": "Max debug value"
+        }
+      ],
+      "enums": [
+        {
+          "name": "debug_level",
+          "description": "Debug levels",
+          "values": [
+            {
+              "name": "info",
+              "description": "Info level"
+            },
+            {
+              "name": "warn", 
+              "description": "Warning level"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

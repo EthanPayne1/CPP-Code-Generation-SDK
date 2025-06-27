@@ -1,0 +1,296 @@
+{
+  "name": "mathlib",
+  "version": "1.0.0",
+  "language": "c",
+  "description": "A mathematical computation library with vector operations and statistical functions",
+  "author": "Code Generator",
+  "license": "MIT",
+  "c_standard": "c99",
+  "build_systems": ["cmake", "make"],
+  "generate_tests": true,
+  "test_framework": "unity",
+  "generate_docs": true,
+  "include_examples": true,
+  "error_handling": {
+    "style": "return_codes",
+    "use_assert": true
+  },
+  "memory_management": {
+    "style": "manual",
+    "include_allocator": false
+  },
+  "portability": {
+    "platforms": ["linux", "windows", "macos"],
+    "endianness": "both"
+  },
+  "modules": [
+    {
+      "name": "vector",
+      "description": "Vector operations and linear algebra functions",
+      "constants": [
+        {
+          "name": "VECTOR_MAX_SIZE",
+          "type": "size_t",
+          "value": "1024",
+          "description": "Maximum vector size"
+        },
+        {
+          "name": "VECTOR_DEFAULT_TOLERANCE",
+          "type": "double",
+          "value": "1e-9",
+          "description": "Default floating point tolerance"
+        }
+      ],
+      "enums": [
+        {
+          "name": "vector_norm",
+          "description": "Vector norm types",
+          "values": [
+            {
+              "name": "l1",
+              "description": "L1 norm (Manhattan distance)"
+            },
+            {
+              "name": "l2",
+              "description": "L2 norm (Euclidean distance)"
+            },
+            {
+              "name": "inf",
+              "description": "Infinity norm (maximum element)"
+            }
+          ]
+        }
+      ],
+      "structures": [
+        {
+          "name": "vector",
+          "description": "Dynamic vector structure",
+          "fields": [
+            {
+              "name": "data",
+              "type": "double*",
+              "description": "Vector data array"
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "description": "Number of elements"
+            },
+            {
+              "name": "capacity",
+              "type": "size_t",
+              "description": "Allocated capacity"
+            }
+          ]
+        }
+      ],
+      "functions": [
+        {
+          "name": "vector_create",
+          "description": "Create a new vector with specified size",
+          "return_type": "vector_error_t",
+          "parameters": [
+            {
+              "name": "size",
+              "type": "size_t",
+              "description": "Initial vector size"
+            },
+            {
+              "name": "vec",
+              "type": "vector_t*",
+              "is_pointer": true,
+              "description": "Output vector pointer"
+            }
+          ]
+        },
+        {
+          "name": "vector_destroy",
+          "description": "Destroy a vector and free its memory",
+          "return_type": "vector_error_t",
+          "parameters": [
+            {
+              "name": "vec",
+              "type": "vector_t*",
+              "is_pointer": true,
+              "description": "Vector to destroy"
+            }
+          ]
+        },
+        {
+          "name": "vector_add",
+          "description": "Add two vectors element-wise",
+          "return_type": "vector_error_t",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "vector_t*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "First vector"
+            },
+            {
+              "name": "b",
+              "type": "vector_t*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "Second vector"
+            },
+            {
+              "name": "result",
+              "type": "vector_t*",
+              "is_pointer": true,
+              "description": "Result vector"
+            }
+          ]
+        },
+        {
+          "name": "vector_dot_product",
+          "description": "Calculate dot product of two vectors",
+          "return_type": "vector_error_t",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "vector_t*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "First vector"
+            },
+            {
+              "name": "b",
+              "type": "vector_t*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "Second vector"
+            },
+            {
+              "name": "result",
+              "type": "double*",
+              "is_pointer": true,
+              "description": "Output dot product"
+            }
+          ]
+        },
+        {
+          "name": "vector_norm",
+          "description": "Calculate vector norm",
+          "return_type": "vector_error_t",
+          "parameters": [
+            {
+              "name": "vec",
+              "type": "vector_t*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "Input vector"
+            },
+            {
+              "name": "norm_type",
+              "type": "vector_norm_t",
+              "description": "Type of norm to calculate"
+            },
+            {
+              "name": "result",
+              "type": "double*",
+              "is_pointer": true,
+              "description": "Output norm value"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stats",
+      "description": "Statistical analysis functions",
+      "functions": [
+        {
+          "name": "stats_mean",
+          "description": "Calculate arithmetic mean of array",
+          "return_type": "stats_error_t",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "double*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "Input data array"
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "description": "Array size"
+            },
+            {
+              "name": "result",
+              "type": "double*",
+              "is_pointer": true,
+              "description": "Output mean value"
+            }
+          ]
+        },
+        {
+          "name": "stats_variance",
+          "description": "Calculate variance of array",
+          "return_type": "stats_error_t",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "double*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "Input data array"
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "description": "Array size"
+            },
+            {
+              "name": "result",
+              "type": "double*",
+              "is_pointer": true,
+              "description": "Output variance value"
+            }
+          ]
+        },
+        {
+          "name": "stats_correlation",
+          "description": "Calculate correlation coefficient between two arrays",
+          "return_type": "stats_error_t",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "double*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "First data array"
+            },
+            {
+              "name": "y",
+              "type": "double*",
+              "is_const": true,
+              "is_pointer": true,
+              "description": "Second data array"
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "description": "Array size"
+            },
+            {
+              "name": "result",
+              "type": "double*",
+              "is_pointer": true,
+              "description": "Output correlation coefficient"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "m",
+      "type": "system",
+      "required": true
+    }
+  ]
+}

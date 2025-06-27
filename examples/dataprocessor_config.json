@@ -1,0 +1,329 @@
+{
+  "name": "dataprocessor",
+  "version": "2.1.0",
+  "language": "cpp",
+  "description": "A modern C++ data processing library with stream processing and analysis capabilities",
+  "author": "Ethan Payne",
+  "license": "Apache-2.0",
+  "namespace": "dataproc",
+  "cpp_standard": "cpp17",
+  "build_systems": ["cmake"],
+  "generate_tests": true,
+  "test_framework": "gtest",
+  "generate_docs": true,
+  "include_examples": true,
+  "error_handling": {
+    "style": "exceptions",
+    "use_assert": false
+  },
+  "memory_management": {
+    "style": "smart_pointers",
+    "include_allocator": true
+  },
+  "portability": {
+    "platforms": ["all"],
+    "endianness": "both"
+  },
+  "modules": [
+    {
+      "name": "stream",
+      "description": "Stream processing and data transformation",
+      "constants": [
+        {
+          "name": "DEFAULT_BUFFER_SIZE",
+          "type": "size_t",
+          "value": "8192",
+          "description": "Default buffer size for stream operations"
+        },
+        {
+          "name": "MAX_PARALLEL_STREAMS",
+          "type": "size_t",
+          "value": "16",
+          "description": "Maximum number of parallel streams"
+        }
+      ],
+      "enums": [
+        {
+          "name": "stream_state",
+          "description": "Stream processing states",
+          "type": "uint8_t",
+          "values": [
+            {
+              "name": "idle",
+              "value": 0,
+              "description": "Stream is idle"
+            },
+            {
+              "name": "processing",
+              "value": 1,
+              "description": "Stream is actively processing"
+            },
+            {
+              "name": "completed",
+              "value": 2,
+              "description": "Stream processing completed"
+            },
+            {
+              "name": "error",
+              "value": 3,
+              "description": "Stream encountered an error"
+            }
+          ]
+        },
+        {
+          "name": "compression_type",
+          "description": "Data compression algorithms",
+          "values": [
+            {
+              "name": "none",
+              "description": "No compression"
+            },
+            {
+              "name": "lz4",
+              "description": "LZ4 compression"
+            },
+            {
+              "name": "zstd",
+              "description": "Zstandard compression"
+            },
+            {
+              "name": "gzip",
+              "description": "GZIP compression"
+            }
+          ]
+        }
+      ],
+      "structures": [
+        {
+          "name": "stream_config",
+          "description": "Configuration for stream processing",
+          "fields": [
+            {
+              "name": "buffer_size",
+              "type": "size_t",
+              "description": "Buffer size for stream operations"
+            },
+            {
+              "name": "max_memory",
+              "type": "size_t",
+              "description": "Maximum memory usage"
+            },
+            {
+              "name": "parallel_workers",
+              "type": "uint32_t",
+              "description": "Number of parallel workers"
+            },
+            {
+              "name": "compression",
+              "type": "CompressionType",
+              "description": "Compression algorithm to use"
+            },
+            {
+              "name": "enable_checksum",
+              "type": "bool",
+              "description": "Enable data integrity checksums"
+            }
+          ]
+        },
+        {
+          "name": "stream_stats",
+          "description": "Stream processing statistics",
+          "fields": [
+            {
+              "name": "bytes_processed",
+              "type": "uint64_t",
+              "description": "Total bytes processed"
+            },
+            {
+              "name": "processing_time_ms",
+              "type": "uint64_t",
+              "description": "Processing time in milliseconds"
+            },
+            {
+              "name": "throughput_mbps",
+              "type": "double",
+              "description": "Throughput in MB/s"
+            },
+            {
+              "name": "error_count",
+              "type": "uint32_t",
+              "description": "Number of errors encountered"
+            }
+          ]
+        }
+      ],
+      "functions": [
+        {
+          "name": "create_stream",
+          "description": "Create a new data stream processor",
+          "return_type": "std::unique_ptr<StreamProcessor>",
+          "parameters": [
+            {
+              "name": "config",
+              "type": "StreamConfig",
+              "is_const": true,
+              "description": "Stream configuration"
+            }
+          ]
+        },
+        {
+          "name": "process_data",
+          "description": "Process data through the stream",
+          "return_type": "void",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "std::span<const uint8_t>",
+              "description": "Input data to process"
+            },
+            {
+              "name": "output",
+              "type": "std::vector<uint8_t>",
+              "is_pointer": true,
+              "description": "Output processed data"
+            }
+          ]
+        },
+        {
+          "name": "get_statistics",
+          "description": "Get stream processing statistics",
+          "return_type": "StreamStats",
+          "parameters": []
+        },
+        {
+          "name": "reset",
+          "description": "Reset stream processor state",
+          "return_type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "analyzer",
+      "description": "Data analysis and pattern detection",
+      "enums": [
+        {
+          "name": "pattern_type",
+          "description": "Types of patterns to detect",
+          "values": [
+            {
+              "name": "periodic",
+              "description": "Periodic patterns"
+            },
+            {
+              "name": "trending",
+              "description": "Trending patterns"
+            },
+            {
+              "name": "anomaly",
+              "description": "Anomalous patterns"
+            },
+            {
+              "name": "cluster",
+              "description": "Cluster patterns"
+            }
+          ]
+        }
+      ],
+      "structures": [
+        {
+          "name": "analysis_result",
+          "description": "Result of data analysis",
+          "fields": [
+            {
+              "name": "pattern_found",
+              "type": "bool",
+              "description": "Whether a pattern was detected"
+            },
+            {
+              "name": "confidence",
+              "type": "double",
+              "description": "Confidence level (0.0 to 1.0)"
+            },
+            {
+              "name": "pattern_type",
+              "type": "PatternType",
+              "description": "Type of detected pattern"
+            },
+            {
+              "name": "metadata",
+              "type": "std::unordered_map<std::string, std::string>",
+              "description": "Additional pattern metadata"
+            }
+          ]
+        }
+      ],
+      "functions": [
+        {
+          "name": "analyze_time_series",
+          "description": "Analyze time series data for patterns",
+          "return_type": "AnalysisResult",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "std::vector<double>",
+              "is_const": true,
+              "description": "Time series data points"
+            },
+            {
+              "name": "timestamps",
+              "type": "std::vector<uint64_t>",
+              "is_const": true,
+              "description": "Corresponding timestamps"
+            },
+            {
+              "name": "pattern_types",
+              "type": "std::vector<PatternType>",
+              "is_const": true,
+              "description": "Pattern types to search for"
+            }
+          ]
+        },
+        {
+          "name": "detect_anomalies",
+          "description": "Detect anomalies in data stream",
+          "return_type": "std::vector<size_t>",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "std::vector<double>",
+              "is_const": true,
+              "description": "Input data stream"
+            },
+            {
+              "name": "sensitivity",
+              "type": "double",
+              "default_value": "0.95",
+              "description": "Anomaly detection sensitivity"
+            }
+          ]
+        },
+        {
+          "name": "compute_correlation_matrix",
+          "description": "Compute correlation matrix for multivariate data",
+          "return_type": "std::vector<std::vector<double>>",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "std::vector<std::vector<double>>",
+              "is_const": true,
+              "description": "Multivariate data (each inner vector is a variable)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "Threads",
+      "type": "cmake",
+      "required": true
+    },
+    {
+      "name": "OpenMP",
+      "type": "cmake",
+      "required": false
+    }
+  ]
+}

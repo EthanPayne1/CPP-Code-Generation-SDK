@@ -1,0 +1,460 @@
+# {{ config.name }}
+
+{{ config.description or 'A robust and portable C/C++ library' }}
+
+**Version:** {{ config.version }}  
+**Language:** {{ config.language | upper }}  
+**Author:** {{ config.author or 'Unknown' }}  
+**License:** {{ config.license or 'MIT' }}  
+
+## Overview
+
+{{ config.name }} is a {% if config.language.lower() == 'c' %}C{% else %}C++{% endif %} library that provides {{ config.description or 'essential functionality for your applications' }}.
+
+### Key Features
+
+- ✅ **Robust Error Handling**: Comprehensive error reporting and handling mechanisms
+- ✅ **Memory Safe**: Proper memory management with leak prevention
+- ✅ **Cross-Platform**: Works on Linux, Windows, macOS{% if 'embedded' in config.get('portability', {}).get('platforms', []) %}, and embedded systems{% endif %}
+- ✅ **Well Documented**: Extensive API documentation and examples
+- ✅ **Unit Tested**: Comprehensive test suite with {{ config.test_framework }} framework
+- ✅ **Modern Standards**: Uses {% if config.language.lower() == 'c' %}C{{ config.c_standard[1:] if config.c_standard else '99' }}{% else %}C++{{ config.cpp_standard[3:] if config.cpp_standard else '17' }}{% endif %} standard
+{% if config.namespace %}
+- ✅ **Namespace Isolation**: All functionality contained within `{{ config.namespace }}` namespace
+{% endif %}
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+{% if config.modules %}
+{% for module in config.modules %}
+  - [{{ module.name | title }} Module](#{{ module.name | lower }}-module)
+{% endfor %}
+{% endif %}
+- [Examples](#examples)
+- [Building from Source](#building-from-source)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Installation
+
+### Using CMake
+
+```cmake
+find_package({{ config.name }} REQUIRED)
+target_link_libraries(your_target {{ config.name }}::{{ config.name }})
+```
+
+### Using pkg-config
+
+```bash
+gcc `pkg-config --cflags --libs {{ config.name }}` your_file.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}
+```
+
+### Manual Installation
+
+```bash
+git clone https://github.com/your-username/{{ config.name }}.git
+cd {{ config.name }}
+mkdir build && cd build
+cmake ..
+make install
+```
+
+## Quick Start
+
+{% if config.language.lower() == 'c' %}
+### C Example
+
+```c
+#include <{{ config.name }}/{{ config.modules[0].name if config.modules else 'library' }}.h>
+#include <stdio.h>
+
+int main() {
+    // Initialize the library
+    {{ config.modules[0].name if config.modules else 'library' }}_error_t result = {{ config.modules[0].name if config.modules else 'library' }}_init();
+    if (result != {{ (config.modules[0].name if config.modules else 'library') | upper }}_SUCCESS) {
+        fprintf(stderr, "Failed to initialize: %s\n", 
+                {{ config.modules[0].name if config.modules else 'library' }}_error_string(result));
+        return 1;
+    }
+
+    // Use the library
+    printf("{{ config.name }} v{{ config.version }} initialized successfully!\n");
+
+    // Cleanup
+    result = {{ config.modules[0].name if config.modules else 'library' }}_cleanup();
+    if (result != {{ (config.modules[0].name if config.modules else 'library') | upper }}_SUCCESS) {
+        fprintf(stderr, "Cleanup failed: %s\n", 
+                {{ config.modules[0].name if config.modules else 'library' }}_error_string(result));
+        return 1;
+    }
+
+    return 0;
+}
+```
+{% else %}
+### C++ Example
+
+```cpp
+#include <{{ config.name }}/{{ config.modules[0].name if config.modules else 'library' }}.h>
+#include <iostream>
+
+{% if config.namespace %}
+using namespace {{ config.namespace }};
+{% endif %}
+
+int main() {
+    try {
+        // Create instance (RAII)
+        {{ (config.modules[0].name if config.modules else 'library') | pascal_case }} instance;
+        
+        // Use the library
+        std::cout << "{{ config.name }} v" << get_version() 
+                  << " initialized successfully!" << std::endl;
+        
+        // Print build information
+        std::cout << get_build_info() << std::endl;
+        
+        // Library is automatically cleaned up when instance goes out of scope
+        
+    } catch (const {{ (config.modules[0].name if config.modules else 'library') | pascal_case }}Exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+    
+    return 0;
+}
+```
+{% endif %}
+
+### Compilation
+
+```bash
+{% if config.language.lower() == 'c' %}
+gcc -std=c{{ config.c_standard[1:] if config.c_standard else '99' }} -o example example.c -l{{ config.name }}
+{% else %}
+g++ -std=c++{{ config.cpp_standard[3:] if config.cpp_standard else '17' }} -o example example.cpp -l{{ config.name }}
+{% endif %}
+```
+
+## API Reference
+
+{% if config.modules %}
+{% for module in config.modules %}
+
+### {{ module.name | title }} Module
+
+{{ module.description or 'Module: ' + module.name }}
+
+{% if module.constants %}
+#### Constants
+
+{% for constant in module.constants %}
+- `{{ constant.name }}`: {{ constant.description or 'Constant value' }} ({{ constant.value }})
+{% endfor %}
+{% endif %}
+
+{% if module.enums %}
+#### Enumerations
+
+{% for enum in module.enums %}
+##### {{ enum.name | title }}
+
+{{ enum.description or 'Enumeration: ' + enum.name }}
+
+{% for value in enum['values'] %}
+- `{{ enum.name | upper }}_{{ value.name | upper }}`: {{ value.description or value.name }}
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+
+{% if module.structures %}
+#### Structures
+
+{% for struct in module.structures %}
+##### {{ struct.name | title }}
+
+{{ struct.description or 'Structure: ' + struct.name }}
+
+```{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}
+{% if config.language.lower() == 'c' %}
+typedef struct {{ struct.name }}_s {
+{% for field in struct['fields'] %}
+    {{ field.type }} {{ field.name }}; // {{ field.description or field.name }}
+{% endfor %}
+} {{ struct.name }}_t;
+{% else %}
+struct {{ struct.name | pascal_case }} {
+{% for field in struct['fields'] %}
+    {{ field.type }} {{ field.name | snake_case }}; ///< {{ field.description or field.name }}
+{% endfor %}
+};
+{% endif %}
+```
+
+{% endfor %}
+{% endif %}
+
+{% if module.functions %}
+#### Functions
+
+{% for func in module.functions %}
+##### {{ func.name }}
+
+{{ func.description or 'Function: ' + func.name }}
+
+```{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}
+{% if config.language.lower() == 'c' %}
+{{ func.return_type }} {{ func.name }}(
+{% if func['parameters'] %}
+{% for param in func['parameters'] %}
+    {% if param.is_const %}const {% endif %}{{ param.type }}{% if param.is_pointer %}*{% endif %} {{ param.name }}{% if not loop.last %},{% endif %}
+{% endfor %}
+{% else %}
+    void
+{% endif %}
+);
+{% else %}
+{{ func.return_type }} {{ func.name | snake_case }}(
+{% if func['parameters'] %}
+{% for param in func['parameters'] %}
+    {% if param.is_const %}const {% endif %}{{ param.type }}{% if param.is_pointer %}&{% endif %} {{ param.name | snake_case }}{% if not loop.last %},{% endif %}
+{% endfor %}
+{% endif %}
+);
+{% endif %}
+```
+
+**Parameters:**
+{% if func['parameters'] %}
+{% for param in func['parameters'] %}
+- `{{ param.name }}`: {{ param.description or param.name }}
+{% endfor %}
+{% else %}
+None
+{% endif %}
+
+**Returns:** {{ func.return_type }} - {{ 'Error code' if func.return_type.endswith('_error_t') else 'Function result' }}
+
+{% if config.include_examples %}
+**Example:**
+```{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}
+{% if config.language.lower() == 'c' %}
+{{ func.return_type }} result = {{ func.name }}({% for param in func['parameters'] %}{{ param.name }}{% if not loop.last %}, {% endif %}{% endfor %});
+{% if func.return_type.endswith('_error_t') %}
+if (result != {{ module.name | upper }}_SUCCESS) {
+    fprintf(stderr, "Error: %s\n", {{ module.name }}_error_string(result));
+}
+{% endif %}
+{% else %}
+try {
+    {% if func.return_type == 'void' %}
+    instance.{{ func.name | snake_case }}({% for param in func['parameters'] %}{{ param.name | snake_case }}{% if not loop.last %}, {% endif %}{% endfor %});
+    {% else %}
+    auto result = instance.{{ func.name | snake_case }}({% for param in func['parameters'] %}{{ param.name | snake_case }}{% if not loop.last %}, {% endif %}{% endfor %});
+    {% endif %}
+} catch (const {{ module.name | pascal_case }}Exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+}
+{% endif %}
+```
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+## Examples
+
+### Complete Examples
+
+{% if config.include_examples %}
+Check the `examples/` directory for complete working examples:
+
+- `basic_usage.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}` - Basic library usage
+- `error_handling.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}` - Comprehensive error handling
+{% if config.modules and config.modules|length > 1 %}
+- `multi_module.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}` - Using multiple modules
+{% endif %}
+{% if config.language.lower() == 'cpp' %}
+- `raii_example.cpp` - RAII and exception safety
+- `modern_cpp.cpp` - Modern C++ features
+{% endif %}
+{% endif %}
+
+## Building from Source
+
+### Prerequisites
+
+{% if config.language.lower() == 'c' %}
+- C compiler supporting C{{ config.c_standard[1:] if config.c_standard else '99' }} standard (GCC, Clang, MSVC)
+{% else %}
+- C++ compiler supporting C++{{ config.cpp_standard[3:] if config.cpp_standard else '17' }} standard (GCC, Clang, MSVC)
+{% endif %}
+- CMake 3.16 or later
+{% if config.dependencies %}
+- Dependencies:
+{% for dep in config.dependencies %}
+  - {{ dep.name }}{% if dep.version %} (>= {{ dep.version }}){% endif %}
+{% endfor %}
+{% endif %}
+
+### Build Steps
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/{{ config.name }}.git
+cd {{ config.name }}
+
+# Create build directory
+mkdir build && cd build
+
+# Configure
+cmake .. -DCMAKE_BUILD_TYPE=Release
+
+# Build
+cmake --build . --parallel
+
+# Install (optional)
+sudo cmake --install .
+```
+
+### Build Options
+
+- `CMAKE_BUILD_TYPE`: Build type (Debug, Release, RelWithDebInfo, MinSizeRel)
+{% if config.generate_tests %}
+- `{{ config.name | upper }}_BUILD_TESTS`: Build test suite (default: OFF)
+{% endif %}
+- `BUILD_SHARED_LIBS`: Build shared library instead of static (default: OFF)
+
+## Testing
+
+{% if config.generate_tests %}
+The library includes a comprehensive test suite using {{ config.test_framework }}.
+
+### Running Tests
+
+```bash
+# Build with tests enabled
+cmake .. -D{{ config.name | upper }}_BUILD_TESTS=ON
+
+# Build the tests
+cmake --build . --target {{ config.name }}_tests
+
+# Run the tests
+ctest --output-on-failure
+```
+
+### Test Coverage
+
+To generate test coverage reports:
+
+```bash
+# Configure with coverage
+cmake .. -D{{ config.name | upper }}_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
+
+# Build and run tests
+cmake --build .
+ctest
+
+# Generate coverage report
+gcov src/*.{% if config.language.lower() == 'c' %}c{% else %}cpp{% endif %}
+lcov --capture --directory . --output-file coverage.info
+genhtml coverage.info --output-directory coverage_html
+```
+{% else %}
+Testing framework is not included in this configuration.
+{% endif %}
+
+## Performance Considerations
+
+- The library is designed for both performance and safety
+- Memory allocations are minimized and predictable
+- Thread safety is considered in the design
+{% if config.language.lower() == 'cpp' %}
+- RAII ensures proper resource management
+- Move semantics are used where appropriate
+{% endif %}
+
+## Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|--------|
+{% if 'linux' in config.get('portability', {}).get('platforms', ['all']) or 'all' in config.get('portability', {}).get('platforms', ['all']) %}
+| Linux    | ✅ Supported | Tested on Ubuntu, CentOS, Alpine |
+{% endif %}
+{% if 'windows' in config.get('portability', {}).get('platforms', ['all']) or 'all' in config.get('portability', {}).get('platforms', ['all']) %}
+| Windows  | ✅ Supported | MSVC, MinGW, Clang |
+{% endif %}
+{% if 'macos' in config.get('portability', {}).get('platforms', ['all']) or 'all' in config.get('portability', {}).get('platforms', ['all']) %}
+| macOS    | ✅ Supported | Clang, GCC via Homebrew |
+{% endif %}
+{% if 'embedded' in config.get('portability', {}).get('platforms', []) %}
+| Embedded | ✅ Supported | ARM Cortex-M, AVR |
+{% endif %}
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass: `cmake --build . && ctest`
+6. Commit your changes: `git commit -m 'Add amazing feature'`
+7. Push to the branch: `git push origin feature/amazing-feature`
+8. Open a Pull Request
+
+### Code Style
+
+- Follow the existing code style
+{% if config.language.lower() == 'c' %}
+- Use snake_case for function and variable names
+- Use UPPER_CASE for constants and macros
+{% else %}
+- Use snake_case for function and variable names
+- Use PascalCase for class and struct names
+- Use UPPER_CASE for constants
+{% endif %}
+- Include comprehensive documentation
+- Write unit tests for new functionality
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Compilation errors**: Ensure your compiler supports {% if config.language.lower() == 'c' %}C{{ config.c_standard[1:] if config.c_standard else '99' }}{% else %}C++{{ config.cpp_standard[3:] if config.cpp_standard else '17' }}{% endif %}
+2. **Linking errors**: Make sure the library is properly installed and linked
+3. **Runtime errors**: Check the error messages using the error string functions
+
+### Getting Help
+
+- Check the [FAQ](FAQ.md)
+- Search existing [issues](https://github.com/your-username/{{ config.name }}/issues)
+- Create a new issue with detailed information
+
+## License
+
+This project is licensed under the {{ config.license or 'MIT' }} License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Generated using C/C++ Code Generator
+- Built with modern {% if config.language.lower() == 'c' %}C{% else %}C++{% endif %} best practices
+- Inspired by industry-standard libraries
+
+---
+
+**Generated on:** {{ config.generated_at[:10] }}  
+**Generator Version:** {{ config.generator_version }}  
+**Documentation Version:** {{ config.version }}
